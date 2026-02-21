@@ -23,7 +23,7 @@ else
             # Extract org/repo from SSH or HTTPS URLs
             # git@github.com:BoutLabs/tclaude.git → BoutLabs/tclaude
             # https://github.com/BoutLabs/tclaude.git → BoutLabs/tclaude
-            org_repo=$(echo "$remote_url" | sed -E 's#.*[:/]([^/]+/[^/]+?)(\.git)?$#\1#')
+            org_repo=$(echo "$remote_url" | sed -E 's#\.git$##; s#.*[:/]([^/]+/[^/]+)$#\1#')
             SESSION_NAME="${org_repo//\//-}"
         else
             SESSION_NAME="$(basename "$PWD")"
