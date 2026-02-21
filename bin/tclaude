@@ -9,7 +9,21 @@ set -euo pipefail
 if [[ $# -ge 1 ]]; then
     SESSION_NAME="$1"
 else
-    SESSION_NAME="$(basename "$PWD")"
+    # Try to derive name from git remote (org/repo format)
+    if git rev-parse --is-inside-work-tree &>/dev/null; then
+        remote_url=$(git remote get-url origin 2>/dev/null || true)
+        if [[ -n "$remote_url" ]]; then
+            # Extract org/repo from SSH or HTTPS URLs
+            # git@github.com:BoutLabs/tclaude.git → BoutLabs/tclaude
+            # https://github.com/BoutLabs/tclaude.git → BoutLabs/tclaude
+            org_repo=$(echo "$remote_url" | sed -E 's#.*[:/]([^/]+/[^/]+?)(\.git)?$#\1#')
+            SESSION_NAME="${org_repo//\//-}"
+        else
+            SESSION_NAME="$(basename "$PWD")"
+        fi
+    else
+        SESSION_NAME="$(basename "$PWD")"
+    fi
 fi
 
 # tmux doesn't allow dots in session names
