@@ -25,6 +25,7 @@ else
             # https://github.com/BoutLabs/tclaude.git → BoutLabs/tclaude
             org_repo=$(echo "$remote_url" | sed -E 's#\.git$##; s#.*[:/]([^/]+/[^/]+)$#\1#')
             SESSION_NAME="${org_repo//\//-}"
+            TAB_TITLE="${org_repo##*/}"
         else
             SESSION_NAME="$(basename "$PWD")"
         fi
@@ -55,8 +56,13 @@ if [[ -n "$existing_logs" ]]; then
     done
 fi
 
+# Set tab title to repo name (falls back to session name)
+TAB_TITLE="${TAB_TITLE:-$SESSION_NAME}"
+
 # Create new session, enable pipe-pane for logging, then launch claude
 tmux new-session -d -s "$SESSION_NAME" -c "$PWD"
+tmux set-option -t "$SESSION_NAME" set-titles on
+tmux set-option -t "$SESSION_NAME" set-titles-string "$TAB_TITLE"
 tmux pipe-pane -t "$SESSION_NAME" -o "cat >> '$LOG_FILE'"
 tmux send-keys -t "$SESSION_NAME" "claude" Enter
 exec tmux attach-session -t "=$SESSION_NAME"
