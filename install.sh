@@ -13,11 +13,11 @@ echo ""
 # 1. Install bin scripts
 echo "Installing scripts to $BIN_DIR..."
 mkdir -p "$BIN_DIR"
-for script in tclaude tclaude-list tclaude-setup tclaude-kill tclaude-all; do
+for script in tclaude tclaude-list tclaude-setup tclaude-kill tclaude-all tclaude-log; do
     cp "$SCRIPT_DIR/bin/$script" "$BIN_DIR/$script"
     chmod +x "$BIN_DIR/$script"
 done
-echo "  Installed: tclaude, tclaude-list, tclaude-setup, tclaude-kill, tclaude-all"
+echo "  Installed: tclaude, tclaude-list, tclaude-setup, tclaude-kill, tclaude-all, tclaude-log"
 
 # 2. Install notification hook
 echo "Installing notification hook to $HOOKS_DIR..."

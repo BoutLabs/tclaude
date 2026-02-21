@@ -12,7 +12,7 @@ echo ""
 
 # 1. Remove bin scripts
 echo "Removing scripts from $BIN_DIR..."
-for script in tclaude tclaude-list tclaude-setup tclaude-kill tclaude-all; do
+for script in tclaude tclaude-list tclaude-setup tclaude-kill tclaude-all tclaude-log; do
     if [[ -f "$BIN_DIR/$script" ]]; then
         rm "$BIN_DIR/$script"
         echo "  Removed: $script"

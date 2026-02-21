@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# tclaude-log - View session logs
+# Usage: tclaude-log [session-name]
+
+set -euo pipefail
+
+LOG_DIR="$HOME/.local/share/tclaude/logs"
+
+if [[ ! -d "$LOG_DIR" ]]; then
+    echo "No logs found. Start a session with 'tclaude' first."
+    exit 0
+fi
+
+# If session name provided, show its latest log
+if [[ $# -ge 1 ]]; then
+    session="$1"
+    latest=$(ls -1t "$LOG_DIR/${session}"-*.log 2>/dev/null | head -1)
+    if [[ -z "$latest" ]]; then
+        echo "No logs found for session '$session'."
+        exit 1
+    fi
+    echo "Log: $latest"
+    echo "---"
+    exec tail -f "$latest"
+fi
+
+# No args: list available logs grouped by session
+echo "Available session logs:"
+echo "======================="
+echo ""
+
+declare -A seen
+for log in $(ls -1t "$LOG_DIR"/*.log 2>/dev/null); do
+    filename=$(basename "$log")
+    # Strip timestamp suffix to get session name
+    session="${filename%-[0-9]*-[0-9]*.log}"
+    if [[ -z "${seen[$session]:-}" ]]; then
+        seen[$session]=1
+        count=$(ls -1 "$LOG_DIR/${session}"-*.log 2>/dev/null | wc -l | tr -d ' ')
+        latest=$(ls -1t "$LOG_DIR/${session}"-*.log 2>/dev/null | head -1)
+        latest_time=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$latest" 2>/dev/null || echo "unknown")
+        printf "  %-30s %s logs, latest: %s\n" "$session" "$count" "$latest_time"
+    fi
+done
+
+echo ""
+echo "Usage: tclaude-log <session-name> to tail the latest log"
