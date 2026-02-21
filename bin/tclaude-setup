@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# tclaude-setup - Configure Telegram notifications for Claude Code sessions
+set -euo pipefail
+
+CONFIG_FILE="$HOME/.config/tclaude/telegram.env"
+mkdir -p "$(dirname "$CONFIG_FILE")"
+
+echo "=== Telegram Notification Setup ==="
+echo ""
+echo "Step 1: Open Telegram and message @BotFather"
+echo "Step 2: Send /newbot and follow the prompts"
+echo "Step 3: Copy the bot token below"
+echo ""
+read -rp "Bot token: " TOKEN
+
+if [[ -z "$TOKEN" ]]; then
+    echo "Error: Token is required."
+    exit 1
+fi
+
+echo ""
+echo "Step 4: Open Telegram and send any message to your new bot"
+read -rp "Press Enter once you've messaged the bot..."
+
+echo "Fetching your chat ID..."
+RESPONSE=$(curl -s "https://api.telegram.org/bot${TOKEN}/getUpdates")
+CHAT_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; updates=json.load(sys.stdin).get('result',[]); print(updates[-1]['message']['chat']['id'] if updates else '')" 2>/dev/null || echo "")
+
+if [[ -z "$CHAT_ID" ]]; then
+    echo "Could not auto-detect chat ID."
+    echo "Raw response: $RESPONSE"
+    echo ""
+    read -rp "Enter your chat ID manually: " CHAT_ID
+fi
+
+cat > "$CONFIG_FILE" <<EOF
+TELEGRAM_BOT_TOKEN=${TOKEN}
+TELEGRAM_CHAT_ID=${CHAT_ID}
+EOF
+
+echo ""
+echo "Sending test notification..."
+curl -s -X POST \
+    "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+    -d chat_id="$CHAT_ID" \
+    -d text="✅ Claude Code notifications configured!" \
+    -d parse_mode="Markdown" \
+    >/dev/null 2>&1
+
+echo "Done! Check Telegram for a test message."
+echo "Config saved to: $CONFIG_FILE"

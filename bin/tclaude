@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# tclaude - Launch Claude Code in a named tmux session
+# Session name is derived from the current directory basename
+# Usage: tclaude [session-name]
+
+set -euo pipefail
+
+# Derive session name from current directory or use provided name
+if [[ $# -ge 1 ]]; then
+    SESSION_NAME="$1"
+else
+    SESSION_NAME="$(basename "$PWD")"
+fi
+
+# tmux doesn't allow dots in session names
+SESSION_NAME="${SESSION_NAME//./-}"
+
+# Check if session already exists
+if tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then
+    echo "Session '$SESSION_NAME' already exists. Attaching..."
+    exec tmux attach-session -t "=$SESSION_NAME"
+fi
+
+# Create new session and launch claude
+exec tmux new-session -s "$SESSION_NAME" -c "$PWD" "claude"
