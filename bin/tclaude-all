@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# tclaude-all - Send a command to all tmux sessions
+# Usage: tclaude-all <command>
+
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+    echo "Usage: tclaude-all <command>"
+    echo "Sends keystrokes to all running tmux sessions."
+    exit 1
+fi
+
+COMMAND="$*"
+
+if ! tmux list-sessions 2>/dev/null | grep -q .; then
+    echo "No tmux sessions running."
+    exit 0
+fi
+
+SESSIONS=()
+while IFS= read -r name; do
+    SESSIONS+=("$name")
+done < <(tmux list-sessions -F '#{session_name}' 2>/dev/null)
+
+for session in "${SESSIONS[@]}"; do
+    tmux send-keys -t "=$session" "$COMMAND" Enter
+    echo "Sent to '$session'"
+done
+
+echo ""
+echo "Command sent to ${#SESSIONS[@]} session(s)."
