@@ -42,5 +42,21 @@ if tmux has-session -t "=$SESSION_NAME" 2>/dev/null; then
     exec tmux attach-session -t "=$SESSION_NAME"
 fi
 
-# Create new session and launch claude
-exec tmux new-session -s "$SESSION_NAME" -c "$PWD" "claude"
+# Set up logging
+LOG_DIR="$HOME/.local/share/tclaude/logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/${SESSION_NAME}-$(date +%Y%m%d-%H%M%S).log"
+
+# Rotate logs: keep last 10 per session
+existing_logs=$(ls -1t "$LOG_DIR/${SESSION_NAME}"-*.log 2>/dev/null || true)
+if [[ -n "$existing_logs" ]]; then
+    echo "$existing_logs" | tail -n +10 | while read -r old_log; do
+        rm -f "$old_log"
+    done
+fi
+
+# Create new session, enable pipe-pane for logging, then launch claude
+tmux new-session -d -s "$SESSION_NAME" -c "$PWD"
+tmux pipe-pane -t "=$SESSION_NAME" -o "cat >> '$LOG_FILE'"
+tmux send-keys -t "=$SESSION_NAME" "claude" Enter
+exec tmux attach-session -t "=$SESSION_NAME"
