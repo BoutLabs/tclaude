@@ -1,0 +1,30 @@
+#compdef tclaude
+
+# tclaude - Zsh completion for tclaude commands
+
+_tclaude_sessions() {
+    local -a sessions
+    sessions=(${(f)"$(tmux list-sessions -F '#{session_name}' 2>/dev/null)"})
+    _describe 'session' sessions
+}
+
+_tclaude() {
+    local -a flags
+    flags=(
+        '--list[List sessions (shortcut for tclaude-list)]'
+        '-l[List sessions (shortcut for tclaude-list)]'
+    )
+
+    _arguments -s \
+        '1: :->first' && return
+
+    case "$state" in
+        first)
+            _alternative \
+                'flags:flag:_describe "flag" flags' \
+                'sessions:session:_tclaude_sessions'
+            ;;
+    esac
+}
+
+_tclaude

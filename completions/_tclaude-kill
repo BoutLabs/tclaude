@@ -1,0 +1,20 @@
+#compdef tclaude-kill
+
+_tclaude-kill() {
+    local -a sessions flags
+    flags=('--all[Kill all sessions]')
+    sessions=(${(f)"$(tmux list-sessions -F '#{session_name}' 2>/dev/null)"})
+
+    _arguments -s \
+        '1: :->first' && return
+
+    case "$state" in
+        first)
+            _alternative \
+                'flags:flag:_describe "flag" flags' \
+                'sessions:session:_describe "session" sessions'
+            ;;
+    esac
+}
+
+_tclaude-kill
