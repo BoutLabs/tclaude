@@ -57,6 +57,6 @@ fi
 
 # Create new session, enable pipe-pane for logging, then launch claude
 tmux new-session -d -s "$SESSION_NAME" -c "$PWD"
-tmux pipe-pane -t "=$SESSION_NAME" -o "cat >> '$LOG_FILE'"
-tmux send-keys -t "=$SESSION_NAME" "claude" Enter
+tmux pipe-pane -t "$SESSION_NAME" -o "cat >> '$LOG_FILE'"
+tmux send-keys -t "$SESSION_NAME" "claude" Enter
 exec tmux attach-session -t "=$SESSION_NAME"
