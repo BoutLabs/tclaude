@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 # tclaude - Launch Claude Code in a named tmux session
 # Session name is derived from the current directory basename
-# Usage: tclaude [session-name]
+# Usage: tclaude [--list|-l] [session-name]
 
 set -euo pipefail
+
+# Handle flags
+case "${1:-}" in
+    --list|-l)
+        exec tclaude-list
+        ;;
+esac
 
 # Derive session name from current directory or use provided name
 if [[ $# -ge 1 ]]; then
