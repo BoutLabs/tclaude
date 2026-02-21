@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-# install.sh - Install tclaude scripts and notification hook
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,7 +8,6 @@ SETTINGS_FILE="$HOME/.claude/settings.json"
 echo "=== tclaude installer ==="
 echo ""
 
-# 1. Install bin scripts
 echo "Installing scripts to $BIN_DIR..."
 mkdir -p "$BIN_DIR"
 for script in tclaude tclaude-list tclaude-setup tclaude-kill tclaude-all tclaude-log; do
@@ -19,14 +16,12 @@ for script in tclaude tclaude-list tclaude-setup tclaude-kill tclaude-all tclaud
 done
 echo "  Installed: tclaude, tclaude-list, tclaude-setup, tclaude-kill, tclaude-all, tclaude-log"
 
-# 2. Install notification hook
 echo "Installing notification hook to $HOOKS_DIR..."
 mkdir -p "$HOOKS_DIR"
 cp "$SCRIPT_DIR/hooks/notify-telegram.sh" "$HOOKS_DIR/notify-telegram.sh"
 chmod +x "$HOOKS_DIR/notify-telegram.sh"
 echo "  Installed: notify-telegram.sh"
 
-# 3. Configure Claude Code settings
 echo "Configuring Claude Code settings..."
 
 HOOK_ENTRY='{
@@ -41,7 +36,6 @@ HOOK_ENTRY='{
 }'
 
 if [[ -f "$SETTINGS_FILE" ]]; then
-    # Merge hook into existing settings, preserving existing hooks
     if command -v python3 &>/dev/null; then
         python3 -c "
 import json, sys
@@ -52,7 +46,6 @@ with open('$SETTINGS_FILE', 'r') as f:
 hooks = settings.setdefault('hooks', {})
 notification = hooks.setdefault('Notification', [])
 
-# Check if hook already exists
 hook_cmd = '~/.claude/hooks/notify-telegram.sh'
 exists = any(h.get('command') == hook_cmd for h in notification)
 
@@ -75,7 +68,16 @@ else
     echo "  Created settings.json with Notification hook"
 fi
 
-# 4. Check PATH
+# Install zsh completions
+COMP_DIR="$HOME/.local/share/zsh/site-functions"
+echo "Installing zsh completions to $COMP_DIR..."
+mkdir -p "$COMP_DIR"
+for comp in "$SCRIPT_DIR"/completions/_*; do
+    cp "$comp" "$COMP_DIR/$(basename "$comp")"
+done
+echo "  Installed: _tclaude, _tclaude-kill, _tclaude-log"
+
+# 5. Check PATH
 echo ""
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     echo "WARNING: $BIN_DIR is not in your PATH"
@@ -87,7 +89,7 @@ else
     echo "$BIN_DIR is in your PATH"
 fi
 
-# 5. Done
+# 6. Done
 echo ""
 echo "Installation complete!"
 echo ""

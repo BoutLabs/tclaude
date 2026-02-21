@@ -1,0 +1,14 @@
+#compdef tclaude-log
+
+_tclaude-log() {
+    local log_dir="$HOME/.local/share/tclaude/logs"
+    local -a sessions
+
+    if [[ -d "$log_dir" ]]; then
+        sessions=(${(u)${(f)"$(ls -1 "$log_dir"/*.log 2>/dev/null | xargs -I{} basename {} | sed -E 's/-[0-9]{8}-[0-9]{6}\.log$//')"}})
+    fi
+
+    _describe 'session' sessions
+}
+
+_tclaude-log

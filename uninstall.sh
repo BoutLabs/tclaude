@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-# uninstall.sh - Remove all tclaude files
 set -euo pipefail
 
 BIN_DIR="$HOME/.local/bin"
@@ -10,7 +8,6 @@ CONFIG_DIR="$HOME/.config/tclaude"
 echo "=== tclaude uninstaller ==="
 echo ""
 
-# 1. Remove bin scripts
 echo "Removing scripts from $BIN_DIR..."
 for script in tclaude tclaude-list tclaude-setup tclaude-kill tclaude-all tclaude-log; do
     if [[ -f "$BIN_DIR/$script" ]]; then
@@ -19,7 +16,6 @@ for script in tclaude tclaude-list tclaude-setup tclaude-kill tclaude-all tclaud
     fi
 done
 
-# 2. Remove notification hook
 echo "Removing notification hook from $HOOKS_DIR..."
 if [[ -f "$HOOKS_DIR/notify-telegram.sh" ]]; then
     rm "$HOOKS_DIR/notify-telegram.sh"
@@ -28,7 +24,6 @@ else
     echo "  Not found, skipping."
 fi
 
-# 3. Remove hook entry from settings.json
 if [[ -f "$SETTINGS_FILE" ]] && command -v python3 &>/dev/null; then
     echo "Removing Notification hook from settings.json..."
     python3 -c "
@@ -59,7 +54,16 @@ print('  Removed Notification hook from settings.json')
 "
 fi
 
-# 4. Optionally remove config directory
+# Remove zsh completions
+COMP_DIR="$HOME/.local/share/zsh/site-functions"
+echo "Removing zsh completions from $COMP_DIR..."
+for comp in _tclaude _tclaude-kill _tclaude-log; do
+    if [[ -f "$COMP_DIR/$comp" ]]; then
+        rm "$COMP_DIR/$comp"
+        echo "  Removed: $comp"
+    fi
+done
+
 if [[ -d "$CONFIG_DIR" ]]; then
     echo ""
     read -rp "Remove Telegram config at $CONFIG_DIR? [y/N] " confirm
