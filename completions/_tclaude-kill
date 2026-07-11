@@ -1,4 +1,4 @@
-#compdef tclaude-kill
+#compdef tclaude-kill tgrok-kill tcodex-kill
 
 _tclaude-kill() {
     local -a sessions flags

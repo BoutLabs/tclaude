@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,17 +11,26 @@ echo ""
 
 echo "Installing scripts to $BIN_DIR..."
 mkdir -p "$BIN_DIR"
-for script in tclaude tclaude-list tclaude-setup tclaude-kill tclaude-all tclaude-log; do
-    cp "$SCRIPT_DIR/bin/$script" "$BIN_DIR/$script"
-    chmod +x "$BIN_DIR/$script"
+for tool in tclaude tgrok tcodex; do
+    for role in "" -list -kill -all -log; do
+        script="${tool}${role}"
+        cp "$SCRIPT_DIR/bin/$script" "$BIN_DIR/$script"
+        chmod +x "$BIN_DIR/$script"
+    done
 done
-echo "  Installed: tclaude, tclaude-list, tclaude-setup, tclaude-kill, tclaude-all, tclaude-log"
+for setup in tclaude-setup tcodex-setup; do
+    cp "$SCRIPT_DIR/bin/$setup" "$BIN_DIR/$setup"
+    chmod +x "$BIN_DIR/$setup"
+done
+echo "  Installed: tclaude, tgrok, tcodex (each with -list, -kill, -all, -log), tclaude-setup, tcodex-setup"
 
-echo "Installing notification hook to $HOOKS_DIR..."
+echo "Installing notification hooks to $HOOKS_DIR..."
 mkdir -p "$HOOKS_DIR"
 cp "$SCRIPT_DIR/hooks/notify-telegram.sh" "$HOOKS_DIR/notify-telegram.sh"
 chmod +x "$HOOKS_DIR/notify-telegram.sh"
-echo "  Installed: notify-telegram.sh"
+cp "$SCRIPT_DIR/hooks/notify-telegram-codex.sh" "$HOOKS_DIR/notify-telegram-codex.sh"
+chmod +x "$HOOKS_DIR/notify-telegram-codex.sh"
+echo "  Installed: notify-telegram.sh, notify-telegram-codex.sh"
 
 echo "Configuring Claude Code settings..."
 

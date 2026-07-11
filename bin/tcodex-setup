@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# tcodex-setup - Configure Telegram notifications for Codex CLI sessions
+#
+# Codex has no per-project hook system like Claude Code's Notification hook;
+# instead it invokes a single global `notify` command (set in ~/.codex/config.toml)
+# with a JSON payload as its argv, whenever an agent turn completes.
+set -euo pipefail
+
+CONFIG_FILE="$HOME/.config/tclaude/telegram.env"
+NOTIFY_HOOK="$HOME/.claude/hooks/notify-telegram-codex.sh"
+CODEX_CONFIG="$HOME/.codex/config.toml"
+
+mkdir -p "$(dirname "$CONFIG_FILE")"
+
+echo "=== Codex Telegram Notification Setup ==="
+echo ""
+
+if [[ -f "$CONFIG_FILE" ]]; then
+    echo "Reusing existing Telegram config at $CONFIG_FILE"
+    # shellcheck disable=SC1090
+source "$CONFIG_FILE"
+else
+    echo "Step 1: Open Telegram and message @BotFather"
+    echo "Step 2: Send /newbot and follow the prompts"
+    echo "Step 3: Copy the bot token below"
+    echo ""
+    read -rp "Bot token: " TELEGRAM_BOT_TOKEN
+
+    if [[ -z "$TELEGRAM_BOT_TOKEN" ]]; then
+        echo "Error: Token is required."
+        exit 1
+    fi
+
+    echo ""
+    echo "Step 4: Open Telegram and send any message to your new bot"
+    read -rp "Press Enter once you've messaged the bot..."
+
+    echo "Fetching your chat ID..."
+    RESPONSE=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates")
+    TELEGRAM_CHAT_ID=$(echo "$RESPONSE" | python3 -c "import sys,json; updates=json.load(sys.stdin).get('result',[]); print(updates[-1]['message']['chat']['id'] if updates else '')" 2>/dev/null || echo "")
+
+    if [[ -z "$TELEGRAM_CHAT_ID" ]]; then
+        echo "Could not auto-detect chat ID."
+        echo "Raw response: $RESPONSE"
+        echo ""
+        read -rp "Enter your chat ID manually: " TELEGRAM_CHAT_ID
+    fi
+
+    cat > "$CONFIG_FILE" <<EOF
+TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+EOF
+    echo "Config saved to: $CONFIG_FILE"
+fi
+
+if [[ -z "${TELEGRAM_BOT_TOKEN:-}" || -z "${TELEGRAM_CHAT_ID:-}" ]]; then
+    echo "Error: Telegram config at $CONFIG_FILE is missing a token or chat ID."
+    exit 1
+fi
+
+if [[ ! -f "$NOTIFY_HOOK" ]]; then
+    echo ""
+    echo "Error: $NOTIFY_HOOK not found. Re-run install.sh first."
+    exit 1
+fi
+
+echo ""
+echo "Configuring $CODEX_CONFIG..."
+python3 -c "
+import os, re
+
+path = os.path.expanduser('$CODEX_CONFIG')
+hook_path = os.path.expanduser('$NOTIFY_HOOK')
+
+text = ''
+if os.path.exists(path):
+    with open(path) as f:
+        text = f.read()
+
+if re.search(r'(?m)^\s*notify\s*=', text):
+    print('  notify already configured in config.toml (left unchanged)')
+else:
+    notify_line = 'notify = [\"' + hook_path + '\"]\n'
+    m = re.search(r'(?m)^\[', text)
+    if m:
+        text = text[:m.start()] + notify_line + '\n' + text[m.start():]
+    else:
+        if text and not text.endswith('\n'):
+            text += '\n'
+        text += notify_line
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w') as f:
+        f.write(text)
+    print('  Added notify hook to config.toml')
+"
+
+echo ""
+echo "Sending test notification..."
+curl -s -X POST \
+    "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+    -d chat_id="$TELEGRAM_CHAT_ID" \
+    -d text="✅ Codex notifications configured!" \
+    -d parse_mode="Markdown" \
+    >/dev/null 2>&1
+
+echo "Done! Check Telegram for a test message."

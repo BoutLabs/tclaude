@@ -18,6 +18,7 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     exit 0  # Silently skip if not configured
 fi
 
+# shellcheck disable=SC1090
 source "$CONFIG_FILE"
 
 if [[ -z "${TELEGRAM_BOT_TOKEN:-}" || -z "${TELEGRAM_CHAT_ID:-}" ]]; then
