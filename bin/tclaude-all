@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# tclaude-all - Send a command to all tmux sessions
-# Usage: tclaude-all <command>
+# tclaude-all / tgrok-all / tcodex-all - Send a command to all tmux sessions
+# Usage: tclaude-all <command>  (same usage for tgrok-all, tcodex-all)
+# Tool-agnostic: sends to every running tmux session regardless of which tool created it
 
 set -euo pipefail
 

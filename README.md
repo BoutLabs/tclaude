@@ -49,7 +49,7 @@ tgrok     # launches Grok
 tcodex    # launches Codex
 ```
 
-This creates a tmux session named after your project (from the git remote's `org-repo`, or the directory name) and launches the tool inside it. If the session already exists, it attaches to it. `tgrok` and `tcodex` suffix the auto-derived session name with the tool (e.g. `BoutLabs-my-app-grok`) so you can run all three side by side in the same project — an explicit session name you pass in isn't suffixed.
+This creates a tmux session named after your project (from the git remote's `org-repo`, or the directory name) and launches the tool inside it. If the session already exists, it attaches to it. `tgrok` and `tcodex` suffix the session name with the tool (e.g. `BoutLabs-my-app-grok`) so you can run all three side by side in the same project — this applies even if you pass in a custom name, since otherwise `tgrok my-custom-name` and `tcodex my-custom-name` would both target the same session and attach to whichever one started first instead of starting their own.
 
 You can also specify a custom session name:
 

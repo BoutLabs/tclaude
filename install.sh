@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="$HOME/.local/bin"
 HOOKS_DIR="$HOME/.claude/hooks"
+DATA_HOOKS_DIR="$HOME/.local/share/tclaude/hooks"
 SETTINGS_FILE="$HOME/.claude/settings.json"
 
 echo "=== tclaude installer ==="
@@ -24,13 +25,14 @@ for setup in tclaude-setup tcodex-setup; do
 done
 echo "  Installed: tclaude, tgrok, tcodex (each with -list, -kill, -all, -log), tclaude-setup, tcodex-setup"
 
-echo "Installing notification hooks to $HOOKS_DIR..."
+echo "Installing notification hooks..."
 mkdir -p "$HOOKS_DIR"
 cp "$SCRIPT_DIR/hooks/notify-telegram.sh" "$HOOKS_DIR/notify-telegram.sh"
 chmod +x "$HOOKS_DIR/notify-telegram.sh"
-cp "$SCRIPT_DIR/hooks/notify-telegram-codex.sh" "$HOOKS_DIR/notify-telegram-codex.sh"
-chmod +x "$HOOKS_DIR/notify-telegram-codex.sh"
-echo "  Installed: notify-telegram.sh, notify-telegram-codex.sh"
+mkdir -p "$DATA_HOOKS_DIR"
+cp "$SCRIPT_DIR/hooks/notify-telegram-codex.sh" "$DATA_HOOKS_DIR/notify-telegram-codex.sh"
+chmod +x "$DATA_HOOKS_DIR/notify-telegram-codex.sh"
+echo "  Installed: $HOOKS_DIR/notify-telegram.sh, $DATA_HOOKS_DIR/notify-telegram-codex.sh"
 
 echo "Configuring Claude Code settings..."
 
@@ -85,7 +87,8 @@ mkdir -p "$COMP_DIR"
 for comp in "$SCRIPT_DIR"/completions/_*; do
     cp "$comp" "$COMP_DIR/$(basename "$comp")"
 done
-echo "  Installed: _tclaude, _tclaude-kill, _tclaude-log"
+echo "  Installed: _tclaude, _tclaude-kill, _tclaude-log (also drive tgrok*/tcodex* completion)"
+echo "  If tab-completion for a new command doesn't show up, run: rm -f ~/.zcompdump*"
 
 # 5. Check PATH
 echo ""

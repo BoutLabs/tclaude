@@ -42,13 +42,15 @@ else
     else
         SESSION_NAME="$(basename "$PWD")"
     fi
+fi
 
-    # Suffix auto-derived names with the tool when it isn't Claude, so tclaude,
-    # tgrok, and tcodex can each run their own session in the same project directory
-    if [[ "$TOOL" != "claude" ]]; then
-        SESSION_NAME="${SESSION_NAME}-${TOOL}"
-        TAB_TITLE="${TAB_TITLE:-$(basename "$PWD")} (${TOOL})"
-    fi
+# Suffix the session name with the tool when it isn't Claude, so tclaude, tgrok, and
+# tcodex can each run their own session in the same project directory without colliding
+# — this applies to explicit names too, since two tools launched with the same explicit
+# name would otherwise attach to each other's sessions instead of starting their own
+if [[ "$TOOL" != "claude" ]]; then
+    SESSION_NAME="${SESSION_NAME}-${TOOL}"
+    TAB_TITLE="${TAB_TITLE:-$(basename "$PWD")} (${TOOL})"
 fi
 
 # tmux doesn't allow dots in session names
@@ -77,9 +79,12 @@ fi
 TAB_TITLE="${TAB_TITLE:-$SESSION_NAME}"
 
 # Create new session, enable pipe-pane for logging, then launch the tool
+# LOG_FILE is shell-escaped since tmux hands the pipe-pane command to a shell verbatim,
+# and it embeds SESSION_NAME which may come straight from user input (an explicit name arg)
+LOG_FILE_ESCAPED=$(printf '%q' "$LOG_FILE")
 tmux new-session -d -s "$SESSION_NAME" -c "$PWD"
 tmux set-option -t "$SESSION_NAME" set-titles on
 tmux set-option -t "$SESSION_NAME" set-titles-string "$TAB_TITLE"
-tmux pipe-pane -t "$SESSION_NAME" -o "cat >> '$LOG_FILE'"
+tmux pipe-pane -t "$SESSION_NAME" -o "cat >> $LOG_FILE_ESCAPED"
 tmux send-keys -t "$SESSION_NAME" "$TOOL" Enter
 exec tmux attach-session -t "=$SESSION_NAME"

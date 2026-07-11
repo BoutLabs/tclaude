@@ -38,11 +38,28 @@ msg = d.get('last-assistant-message') or 'Codex needs attention'
 print(msg[:300] + ('…' if len(msg) > 300 else ''))
 " 2>/dev/null || echo "Codex needs attention")
 
-# Codex's cwd at notify time is the project directory tcodex launched it from
-SESSION_NAME="$(basename "$PWD")"
+# Codex's cwd at notify time is the project directory tcodex launched it from. Mirror
+# bin/tclaude's session-name derivation (git remote org/repo, dot-to-dash, "-codex"
+# suffix) so this matches the actual tmux session name — keep these two in sync.
+if git rev-parse --is-inside-work-tree &>/dev/null; then
+    remote_url=$(git remote get-url origin 2>/dev/null || true)
+    if [[ -n "$remote_url" ]]; then
+        org_repo=$(echo "$remote_url" | sed -E 's#\.git$##; s#.*[:/]([^/]+/[^/]+)$#\1#')
+        SESSION_NAME="${org_repo//\//-}"
+    else
+        SESSION_NAME="$(basename "$PWD")"
+    fi
+else
+    SESSION_NAME="$(basename "$PWD")"
+fi
+SESSION_NAME="${SESSION_NAME//./-}-codex"
 
-TEXT="🤖 *Codex*
-📁 \`${SESSION_NAME}\`
+# Sent as plain text (no parse_mode): MESSAGE is raw, arbitrary agent output that may
+# contain unbalanced Markdown metacharacters, which Telegram's Markdown parser rejects
+# outright — since this call is backgrounded and fire-and-forget, a rejected request
+# would otherwise fail silently with no notification at all.
+TEXT="🤖 Codex
+📁 ${SESSION_NAME}
 💬 ${MESSAGE}"
 
 # Send via Telegram Bot API (fire and forget)
@@ -50,7 +67,6 @@ curl -s -X POST \
     "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
     -d chat_id="$TELEGRAM_CHAT_ID" \
     -d text="$TEXT" \
-    -d parse_mode="Markdown" \
     -d disable_notification=false \
     >/dev/null 2>&1 &
 

@@ -40,8 +40,10 @@ echo "======================="
 echo ""
 
 declare -A seen
-shopt -s nullglob
-for log in "$LOG_DIR"/*.log; do
+# Read via a process substitution (not `for x in $(...)`) so filenames with spaces or
+# glob-like characters don't get word-split or re-expanded, while still listing
+# most-recently-modified-first like the original `ls -t`-based ordering
+while IFS= read -r log; do
     filename=$(basename "$log")
     # Strip timestamp suffix to get session name
     session="${filename%-[0-9]*-[0-9]*.log}"
@@ -52,8 +54,7 @@ for log in "$LOG_DIR"/*.log; do
         latest_time=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$latest" 2>/dev/null || echo "unknown")
         printf "  %-30s %s logs, latest: %s\n" "$session" "$count" "$latest_time"
     fi
-done
-shopt -u nullglob
+done < <(ls -1t "$LOG_DIR"/*.log 2>/dev/null)
 
 echo ""
 echo "Usage: t${TOOL}-log <session-name> to tail the latest log"

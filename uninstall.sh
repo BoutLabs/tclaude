@@ -3,6 +3,7 @@ set -euo pipefail
 
 BIN_DIR="$HOME/.local/bin"
 HOOKS_DIR="$HOME/.claude/hooks"
+DATA_HOOKS_DIR="$HOME/.local/share/tclaude/hooks"
 SETTINGS_FILE="$HOME/.claude/settings.json"
 CONFIG_DIR="$HOME/.config/tclaude"
 
@@ -26,15 +27,19 @@ for setup in tclaude-setup tcodex-setup; do
     fi
 done
 
-echo "Removing notification hooks from $HOOKS_DIR..."
-for hook in notify-telegram.sh notify-telegram-codex.sh; do
-    if [[ -f "$HOOKS_DIR/$hook" ]]; then
-        rm "$HOOKS_DIR/$hook"
-        echo "  Removed: $hook"
-    else
-        echo "  $hook not found, skipping."
-    fi
-done
+echo "Removing notification hooks..."
+if [[ -f "$HOOKS_DIR/notify-telegram.sh" ]]; then
+    rm "$HOOKS_DIR/notify-telegram.sh"
+    echo "  Removed: $HOOKS_DIR/notify-telegram.sh"
+else
+    echo "  notify-telegram.sh not found, skipping."
+fi
+if [[ -f "$DATA_HOOKS_DIR/notify-telegram-codex.sh" ]]; then
+    rm "$DATA_HOOKS_DIR/notify-telegram-codex.sh"
+    echo "  Removed: $DATA_HOOKS_DIR/notify-telegram-codex.sh"
+else
+    echo "  notify-telegram-codex.sh not found, skipping."
+fi
 
 if [[ -f "$SETTINGS_FILE" ]] && command -v python3 &>/dev/null; then
     echo "Removing Notification hook from settings.json..."
@@ -73,17 +78,24 @@ if [[ -f "$CODEX_CONFIG" ]] && command -v python3 &>/dev/null; then
 import os, re
 
 path = '$CODEX_CONFIG'
-hook_path = os.path.expanduser('~/.claude/hooks/notify-telegram-codex.sh')
+hook_path = os.path.expanduser('~/.local/share/tclaude/hooks/notify-telegram-codex.sh')
+hook_name = os.path.basename(hook_path)
 
 with open(path) as f:
     text = f.read()
 
-new_text = re.sub(r'(?m)^notify\s*=\s*\[\"' + re.escape(hook_path) + r'\"\]\n\n?', '', text)
+# Match on the hook's basename rather than the exact quoted line, so a hand-edited
+# config.toml (different quote style, reordered, etc.) still gets cleaned up.
+notify_re = re.compile(r'(?m)^[ \t]*notify[ \t]*=.*' + re.escape(hook_name) + r'.*\n\n?')
+new_text = notify_re.sub('', text)
 
 if new_text != text:
     with open(path, 'w') as f:
         f.write(new_text)
     print('  Removed notify hook from config.toml')
+elif re.search(r'(?m)^[ \t]*notify[ \t]*=', text):
+    print('  Warning: config.toml has a notify command that does not reference')
+    print('  notify-telegram-codex.sh - if it does, please remove it manually.')
 else:
     print('  notify hook not found in config.toml, skipping')
 "

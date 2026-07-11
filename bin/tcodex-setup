@@ -7,7 +7,7 @@
 set -euo pipefail
 
 CONFIG_FILE="$HOME/.config/tclaude/telegram.env"
-NOTIFY_HOOK="$HOME/.claude/hooks/notify-telegram-codex.sh"
+NOTIFY_HOOK="$HOME/.local/share/tclaude/hooks/notify-telegram-codex.sh"
 CODEX_CONFIG="$HOME/.codex/config.toml"
 
 mkdir -p "$(dirname "$CONFIG_FILE")"
@@ -66,22 +66,36 @@ fi
 
 echo ""
 echo "Configuring $CODEX_CONFIG..."
-python3 -c "
+# Passed via env vars (not interpolated into the script) and read with a quoted heredoc
+# delimiter so nothing in CODEX_CONFIG/NOTIFY_HOOK or the regexes below is bash-expanded
+CODEX_CONFIG="$CODEX_CONFIG" NOTIFY_HOOK="$NOTIFY_HOOK" python3 - <<'PYEOF'
 import os, re
 
-path = os.path.expanduser('$CODEX_CONFIG')
-hook_path = os.path.expanduser('$NOTIFY_HOOK')
+path = os.path.expanduser(os.environ['CODEX_CONFIG'])
+hook_path = os.path.expanduser(os.environ['NOTIFY_HOOK'])
 
 text = ''
 if os.path.exists(path):
     with open(path) as f:
         text = f.read()
 
-if re.search(r'(?m)^\s*notify\s*=', text):
-    print('  notify already configured in config.toml (left unchanged)')
+# Matches only a real top-level table header on its own line (e.g. `[section]` or
+# `[projects."/path"]`), not an unindented continuation line of a multi-line array
+# literal (which also starts with `[` but isn't followed by a matching `]` on the
+# same line) — inserting before the wrong one would corrupt the file.
+header_re = re.compile(r'(?m)^\[[^][\n]+\][ \t]*$')
+notify_re = re.compile(r'(?m)^[ \t]*notify[ \t]*=.*$')
+
+existing = notify_re.search(text)
+if existing and hook_path in existing.group(0):
+    print('  notify already points at this hook (left unchanged)')
+elif existing:
+    print('  A different notify command is already configured in config.toml -- leaving it as-is.')
+    print('  To use tclaude Telegram notifications instead, manually set:')
+    print('    notify = ["' + hook_path + '"]')
 else:
-    notify_line = 'notify = [\"' + hook_path + '\"]\n'
-    m = re.search(r'(?m)^\[', text)
+    notify_line = 'notify = ["' + hook_path + '"]\n'
+    m = header_re.search(text)
     if m:
         text = text[:m.start()] + notify_line + '\n' + text[m.start():]
     else:
@@ -92,7 +106,7 @@ else:
     with open(path, 'w') as f:
         f.write(text)
     print('  Added notify hook to config.toml')
-"
+PYEOF
 
 echo ""
 echo "Sending test notification..."
