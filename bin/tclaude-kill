@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# tclaude-kill - Kill tmux sessions by name or interactively
+# tclaude-kill / tgrok-kill / tcodex-kill - Kill tmux sessions by name or interactively
 # Supports: tclaude-kill <name>, tclaude-kill --all, tclaude-kill (interactive)
+# Operates on every tmux session regardless of which tool (claude/grok/codex) created it
 
 set -euo pipefail
 
@@ -65,8 +66,8 @@ while IFS='|' read -r name attached windows created; do
     LINES+=("$(printf "%-25s %-12s %-10s %s" "$name" "$status" "$windows" "$created_time")")
 done < <(tmux list-sessions -F '#{session_name}|#{session_attached}|#{session_windows}|#{session_created}' 2>/dev/null)
 
-echo "Claude Code Sessions"
-echo "===================="
+echo "tmux Sessions"
+echo "============="
 printf "  %-4s %-25s %-12s %-10s %s\n" "#" "SESSION" "STATUS" "WINDOWS" "CREATED"
 echo "  ----------------------------------------------------------------"
 

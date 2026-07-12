@@ -1,7 +1,9 @@
-#compdef tclaude-log
+#compdef tclaude-log tgrok-log tcodex-log
 
 _tclaude-log() {
-    local log_dir="$HOME/.local/share/tclaude/logs"
+    local tool="${service#t}"
+    tool="${tool%-log}"
+    local log_dir="$HOME/.local/share/t${tool}/logs"
     local -a sessions
 
     if [[ -d "$log_dir" ]]; then

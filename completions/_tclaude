@@ -1,6 +1,6 @@
-#compdef tclaude
+#compdef tclaude tgrok tcodex
 
-# tclaude - Zsh completion for tclaude commands
+# tclaude/tgrok/tcodex - Zsh completion for tclaude, tgrok, and tcodex commands
 
 _tclaude_sessions() {
     local -a sessions
@@ -11,8 +11,8 @@ _tclaude_sessions() {
 _tclaude() {
     local -a flags
     flags=(
-        '--list[List sessions (shortcut for tclaude-list)]'
-        '-l[List sessions (shortcut for tclaude-list)]'
+        '--list[List sessions (shortcut for -list)]'
+        '-l[List sessions (shortcut for -list)]'
     )
 
     _arguments -s \

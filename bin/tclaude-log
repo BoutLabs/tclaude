@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
-# tclaude-log - View session logs
-# Usage: tclaude-log [session-name]
+# tclaude-log / tgrok-log / tcodex-log - View session logs
+# Usage: tclaude-log [session-name]  (same usage for tgrok-log, tcodex-log)
 
 set -euo pipefail
 
-LOG_DIR="$HOME/.local/share/tclaude/logs"
+case "$(basename "$0")" in
+    tclaude-log) TOOL="claude" ;;
+    tgrok-log)   TOOL="grok" ;;
+    tcodex-log)  TOOL="codex" ;;
+    *)
+        echo "Error: run this script as tclaude-log, tgrok-log, or tcodex-log." >&2
+        exit 1
+        ;;
+esac
+
+LOG_DIR="$HOME/.local/share/t${TOOL}/logs"
 
 if [[ ! -d "$LOG_DIR" ]]; then
-    echo "No logs found. Start a session with 'tclaude' first."
+    echo "No logs found. Start a session with 't${TOOL}' first."
     exit 0
 fi
 
@@ -30,7 +40,10 @@ echo "======================="
 echo ""
 
 declare -A seen
-for log in $(ls -1t "$LOG_DIR"/*.log 2>/dev/null); do
+# Read via a process substitution (not `for x in $(...)`) so filenames with spaces or
+# glob-like characters don't get word-split or re-expanded, while still listing
+# most-recently-modified-first like the original `ls -t`-based ordering
+while IFS= read -r log; do
     filename=$(basename "$log")
     # Strip timestamp suffix to get session name
     session="${filename%-[0-9]*-[0-9]*.log}"
@@ -41,7 +54,7 @@ for log in $(ls -1t "$LOG_DIR"/*.log 2>/dev/null); do
         latest_time=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$latest" 2>/dev/null || echo "unknown")
         printf "  %-30s %s logs, latest: %s\n" "$session" "$count" "$latest_time"
     fi
-done
+done < <(ls -1t "$LOG_DIR"/*.log 2>/dev/null)
 
 echo ""
-echo "Usage: tclaude-log <session-name> to tail the latest log"
+echo "Usage: t${TOOL}-log <session-name> to tail the latest log"
