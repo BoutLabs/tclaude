@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/BoutLabs/tclaude/compare/v1.0.0...v1.1.0) (2026-07-12)
+
+
+### Features
+
+* add tgrok and tcodex alongside tclaude ([#30](https://github.com/BoutLabs/tclaude/issues/30)) ([69b1239](https://github.com/BoutLabs/tclaude/commit/69b1239b3a80dde25c94b719d043609ab8ebb046))
+
 ## 1.0.0 (2026-02-21)
 
 
